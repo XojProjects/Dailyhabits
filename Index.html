@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>12-Month Mogging Tracker</title>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      background: linear-gradient(to bottom, #0f0f0f, #1a1a1a);
+      color: #f0f0f0;
+      margin: 0;
+      padding: 2rem;
+    }
+
+    h1 {
+      text-align: center;
+      color: #00ffae;
+    }
+
+    details {
+      background: #181818;
+      border-radius: 8px;
+      margin: 1rem 0;
+      padding: 1rem;
+      border: 1px solid #333;
+    }
+
+    summary {
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 1.2rem;
+      color: #00ffae;
+    }
+
+    label {
+      display: block;
+      margin: 0.5rem 0;
+    }
+
+    input[type="checkbox"] {
+      margin-right: 0.5rem;
+    }
+
+    .progress-bar {
+      background: #333;
+      border-radius: 20px;
+      overflow: hidden;
+      margin: 10px 0;
+    }
+
+    .progress-bar-inner {
+      background-color: #00ffae;
+      height: 10px;
+      width: 0%;
+      transition: width 0.3s ease-in-out;
+    }
+  </style>
+</head>
+<body>
+  <h1>12-Month Transformation Tracker</h1>
+
+  <details open>
+    <summary>Month 0–1: Foundation Phase</summary>
+    <div id="month0-list">
+      <label><input type="checkbox" onchange="updateProgress('month0')"> AM Cleanser + Niacinamide</label>
+      <label><input type="checkbox" onchange="updateProgress('month0')"> PM Moisturizer + Tretinoin</label>
+      <label><input type="checkbox" onchange="updateProgress('month0')"> Clay mask weekly</label>
+      <label><input type="checkbox" onchange="updateProgress('month0')"> Meditate 5 mins</label>
+      <label><input type="checkbox" onchange="updateProgress('month0')"> Vision board</label>
+      <div class="progress-bar"><div class="progress-bar-inner" id="month0-progress"></div></div>
+    </div>
+  </details>
+
+  <script>
+    function updateProgress(monthId) {
+      const container = document.getElementById(`${monthId}-list`);
+      const checkboxes = container.querySelectorAll('input[type="checkbox"]');
+      const progressBar = document.getElementById(`${monthId}-progress`);
+      const total = checkboxes.length;
+      let checked = 0;
+      checkboxes.forEach(cb => cb.checked && checked++);
+      const percent = Math.floor((checked / total) * 100);
+      progressBar.style.width = percent + "%";
+    }
+  </script>
+</body>
+</html>
