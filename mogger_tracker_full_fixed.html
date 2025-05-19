@@ -1,0 +1,162 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mogger Tracker – 12 Month Journey</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: linear-gradient(to bottom right, #141e30, #243b55);
+      color: #fff;
+    }
+    h1, h2 {
+      text-align: center;
+    }
+    select, button {
+      font-size: 16px;
+      padding: 8px;
+      margin: 10px 0;
+      border-radius: 6px;
+      border: none;
+    }
+    .task {
+      background-color: rgba(255,255,255,0.1);
+      padding: 10px;
+      margin: 8px 0;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+    }
+    .task input {
+      transform: scale(1.3);
+      margin-right: 12px;
+    }
+    .progress-container {
+      margin-top: 20px;
+    }
+    .bar {
+      height: 24px;
+      background-color: rgba(255,255,255,0.2);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .fill {
+      height: 100%;
+      background-color: #00e676;
+      width: 0%;
+      color: #000;
+      text-align: center;
+      line-height: 24px;
+      font-weight: bold;
+    }
+    footer {
+      text-align: center;
+      font-size: 12px;
+      margin-top: 40px;
+      color: #aaa;
+    }
+  </style>
+</head>
+<body>
+  <h1>🧠 Mogger Tracker</h1>
+  <h2>12-Month Transformation</h2>
+
+  <label for="monthSelect">Select Month:</label>
+  <select id="monthSelect">
+    <option value="0">Month 0–1: Foundation</option>
+    <option value="1">Month 2–3: Base Building</option>
+    <option value="2">Month 4–5: Groomed Flex</option>
+    <option value="3">Month 6–7: Glow-Up</option>
+    <option value="4">Month 8–9: Mid-Mog</option>
+    <option value="5">Month 10–11: Final Polish</option>
+    <option value="6">Month 12: Peak Form</option>
+  </select>
+
+  <div id="checklistContainer"></div>
+
+  <div class="progress-container">
+    <p>Progress:</p>
+    <div class="bar"><div id="progressBar" class="fill">0%</div></div>
+  </div>
+
+  <button onclick="resetAll()">Reset Checklist</button>
+
+  <footer>
+    Tracks saved locally · Built for your mogger journey
+  </footer>
+
+  <script>
+    const monthData = [
+      ["AM Skincare", "PM Skincare", "Weekly Clay Mask", "Weekly Exfoliation", "Haircut", "Brow & Shave", "No Sugar", "Meal Prep", "High Protein Intake", "Meditation", "Read Atomic Habits", "Create Vision Board"],
+      ["Gym 3–4x/week", "Posture drills (hang + chin tucks)", "Sleep by 12AM", "Magnesium + Zinc before bed", "AM: Vitamin C serum", "PM: Tretinoin 3x/week", "Gua sha / Jawliner 5 min"],
+      ["Style hair (texture/spray)", "Test curtain fringe", "Black/white tees + cargos", "Apply signature scent", "LED therapy 3x/week", "Dermaplaning / skin needling (1x/month)"],
+      ["Creatine 5g daily", "Cut sugar 100%", "Mewing & facial posture", "Aesthetic pose practice", "Optional: copper peptides", "Wear monochrome fits"],
+      ["Chew gum daily", "Weekly selfies", "Add collagen or bone broth", "Bleach/tone hair (optional)", "Facial hair shaping"],
+      ["Mini cut to 12–14% BF", "Cold shower + face icing", "Tretinoin 4–5x/week", "New fashion fits (knits/streetwear)", "Test proportions / layering"],
+      ["Book photoshoot", "Compare Month 1 vs 12", "Finalize gym/skin routine", "Create 6-month maintenance plan"]
+    ];
+
+    const checklistContainer = document.getElementById("checklistContainer");
+    const progressBar = document.getElementById("progressBar");
+    const monthSelect = document.getElementById("monthSelect");
+
+    function saveState(month, index, checked) {
+      localStorage.setItem(`mogger_m${month}_t${index}`, checked);
+    }
+
+    function loadState(month, index) {
+      return localStorage.getItem(`mogger_m${month}_t${index}`) === "true";
+    }
+
+    function updateProgress() {
+      const checkboxes = document.querySelectorAll(".task input");
+      const total = checkboxes.length;
+      const completed = Array.from(checkboxes).filter(cb => cb.checked).length;
+      const percent = Math.round((completed / total) * 100);
+      progressBar.style.width = percent + "%";
+      progressBar.textContent = percent + "%";
+    }
+
+    function loadChecklist(month) {
+      checklistContainer.innerHTML = "";
+      const tasks = monthData[parseInt(month)];
+      tasks.forEach((text, index) => {
+        const div = document.createElement("div");
+        div.className = "task";
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.checked = loadState(month, index);
+        checkbox.onchange = () => {
+          saveState(month, index, checkbox.checked);
+          updateProgress();
+        };
+        const label = document.createElement("label");
+        label.textContent = text;
+        div.appendChild(checkbox);
+        div.appendChild(label);
+        checklistContainer.appendChild(div);
+      });
+      updateProgress();
+    }
+
+    function resetAll() {
+      const month = monthSelect.value;
+      const tasks = monthData[parseInt(month)];
+      tasks.forEach((_, index) => {
+        localStorage.removeItem(`mogger_m${month}_t${index}`);
+      });
+      loadChecklist(month);
+    }
+
+    monthSelect.addEventListener("change", () => {
+      loadChecklist(monthSelect.value);
+    });
+
+    loadChecklist(monthSelect.value);
+  </script>
+</body>
+</html>
