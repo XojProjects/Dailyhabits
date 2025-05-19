@@ -1,0 +1,143 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Chopped to Mog Transformation</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: radial-gradient(circle at top, #0f0f0f, #1a1a1a);
+      color: #f0f0f0;
+      margin: 0;
+      padding: 2rem;
+    }
+    h1 {
+      text-align: center;
+      color: #ff0050;
+      margin-bottom: 0.5rem;
+    }
+    .combo {
+      text-align: center;
+      font-size: 1.1rem;
+      color: #00ffae;
+      margin-bottom: 1.5rem;
+    }
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+    li {
+      margin: 0.5rem 0;
+    }
+    input[type="checkbox"] {
+      margin-right: 0.6rem;
+      transform: scale(1.3);
+    }
+    .locked {
+      opacity: 0.5;
+      pointer-events: none;
+    }
+    .month-section {
+      margin-top: 2rem;
+    }
+    button {
+      padding: 10px 16px;
+      background-color: #ff0050;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-weight: bold;
+      margin-top: 1.5rem;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔥 Chopped to Mog Transformation</h1>
+  <div class="combo" id="comboDisplay">Combo: x0</div>
+
+  <div class="month-section" id="month0">
+    <h2>Month 0–1: Foundation</h2>
+    <ul>
+      <li><label><input type="checkbox" class="task"> AM Skincare</label></li>
+      <li><label><input type="checkbox" class="task"> PM Skincare</label></li>
+      <li><label><input type="checkbox" class="task"> Weekly Clay Mask</label></li>
+      <li><label><input type="checkbox" class="task"> Meditate 5 min</label></li>
+      <li><label><input type="checkbox" class="task"> Vision Board</label></li>
+    </ul>
+    <button onclick="completeDay()">Submit Day</button>
+  </div>
+
+  <div class="month-section locked" id="month1">
+    <h2>🔒 Month 2–3: Locked</h2>
+    <p>Complete 30 consecutive perfect days to unlock.</p>
+  </div>
+
+  <script>
+    const comboKey = 'mogger_combo';
+    const lastDateKey = 'mogger_last_date';
+    const unlockKey = 'mogger_month1_unlocked';
+
+    const comboDisplay = document.getElementById('comboDisplay');
+    const tasks = document.querySelectorAll('.task');
+    const month1 = document.getElementById('month1');
+
+    function getPerthDate() {
+      const now = new Date();
+      const utc = now.getTime() + now.getTimezoneOffset() * 60000;
+      const perthOffset = 8 * 60 * 60000;
+      return new Date(utc + perthOffset).toISOString().split('T')[0];
+    }
+
+    function loadState() {
+      const combo = parseInt(localStorage.getItem(comboKey)) || 0;
+      const unlocked = localStorage.getItem(unlockKey) === 'true';
+      comboDisplay.textContent = 'Combo: x' + combo;
+
+      if (unlocked) {
+        month1.classList.remove('locked');
+        month1.querySelector('h2').textContent = 'Month 2–3: Base Building';
+      }
+    }
+
+    function completeDay() {
+      const allChecked = Array.from(tasks).every(t => t.checked);
+      const today = getPerthDate();
+      const lastDate = localStorage.getItem(lastDateKey);
+      let combo = parseInt(localStorage.getItem(comboKey)) || 0;
+
+      if (!allChecked) {
+        alert('You must complete all tasks to count today!');
+        return;
+      }
+
+      if (lastDate === today) {
+        alert('You already submitted today.');
+        return;
+      }
+
+      if (!lastDate || (new Date(today) - new Date(lastDate) === 86400000)) {
+        combo++;
+      } else {
+        combo = 1;
+      }
+
+      localStorage.setItem(lastDateKey, today);
+      localStorage.setItem(comboKey, combo);
+      comboDisplay.textContent = 'Combo: x' + combo;
+
+      if (combo >= 30) {
+        localStorage.setItem(unlockKey, 'true');
+        alert('🔥 Month 2–3 Unlocked!');
+        loadState();
+      }
+
+      tasks.forEach(t => t.checked = false);
+    }
+
+    window.onload = loadState;
+  </script>
+</body>
+</html>
