@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Chopped to Mog - Phase 1 Final</title>
+  <title>Chopped to Mog - FINAL STABLE</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700&display=swap" rel="stylesheet">
   <style>
     body {
@@ -18,29 +18,17 @@
       text-align: center;
       color: #ff0050;
     }
-    .combo, .quote, .calendar, .journal, .photos, .milestone {
+    .combo, .calendar, .journal, .photos, .milestone {
       text-align: center;
       margin-top: 1rem;
       margin-bottom: 1rem;
     }
-    .combo {
-      font-size: 1.2rem;
-      color: #00ffae;
-    }
-    .task-list, ul {
-      list-style: none;
-      padding: 0;
-      margin-bottom: 1rem;
-    }
-    li {
-      margin: 0.5rem 0;
-    }
+    .combo { font-size: 1.2rem; color: #00ffae; }
+    ul { list-style: none; padding: 0; margin-bottom: 1rem; }
+    li { margin: 0.5rem 0; }
     input[type="checkbox"], input[type="text"] {
       margin-right: 0.6rem;
       transform: scale(1.2);
-    }
-    .month-section {
-      margin-top: 2rem;
     }
     button {
       padding: 10px 16px;
@@ -56,20 +44,13 @@
       width: 100%;
       padding: 10px;
       font-family: 'Inter', sans-serif;
-      margin-top: 10px;
       border-radius: 8px;
       background: #202020;
       border: 1px solid #555;
       color: white;
       resize: none;
     }
-    .locked {
-      opacity: 0.5;
-      pointer-events: none;
-    }
-    input[type="file"] {
-      margin-top: 0.5rem;
-    }
+    input[type="file"] { margin-top: 0.5rem; }
     img.preview {
       max-width: 100%;
       margin-top: 1rem;
@@ -78,21 +59,21 @@
     }
   </style>
 </head>
-<body>
+<body onload="loadState()">
   <h1>🔥 Chopped to Mog Tracker</h1>
   <div class="combo" id="comboDisplay">Combo: x0</div>
   <div class="milestone" id="milestoneMessage"></div>
 
-  <div class="task-list">
+  <div>
     <h2>📌 Today's Goals</h2>
     <ul id="taskList"></ul>
     <input type="text" id="newTask" placeholder="Add new task...">
-    <button id="addTaskBtn">➕ Add Task</button>
+    <button onclick="addTask()">➕ Add Task</button>
   </div>
 
   <div style="text-align:center;">
-    <button id="submitDayBtn">✅ Submit Day</button>
-    <button id="resetDayBtn">♻️ Reset Day</button>
+    <button onclick="completeDay()">✅ Submit Day</button>
+    <button onclick="resetDay()">♻️ Reset Day</button>
   </div>
 
   <div class="calendar" id="calendarLog"></div>
@@ -104,138 +85,117 @@
 
   <div class="photos">
     <h2>📷 Progress Photo (Month 1)</h2>
-    <input type="file" id="photoInput" accept="image/*">
+    <input type="file" accept="image/*" onchange="handlePhotoUpload(event)">
     <img id="photoPreview" class="preview" style="display:none;">
   </div>
 
   <script>
-    document.addEventListener("DOMContentLoaded", () => {
-      const comboKey = 'mogger_combo';
-      const lastDateKey = 'mogger_last_date';
-      const journalKey = 'mogger_journal_';
-      const photoKey = 'mogger_photo_month1';
-      const taskKey = 'mogger_tasks';
-      const logKey = 'mogger_calendar_log';
+    const comboKey = 'mogger_combo';
+    const lastDateKey = 'mogger_last_date';
+    const journalKey = 'mogger_journal_';
+    const photoKey = 'mogger_photo_month1';
+    const taskKey = 'mogger_tasks';
+    const logKey = 'mogger_calendar_log';
 
-      const comboDisplay = document.getElementById('comboDisplay');
-      const milestoneMessage = document.getElementById('milestoneMessage');
-      const journalEntry = document.getElementById('journalEntry');
-      const taskList = document.getElementById('taskList');
-      const newTaskInput = document.getElementById('newTask');
-      const photoInput = document.getElementById('photoInput');
-      const photoPreview = document.getElementById('photoPreview');
-      const calendarLog = document.getElementById('calendarLog');
+    function getPerthDate() {
+      const now = new Date();
+      const utc = now.getTime() + now.getTimezoneOffset() * 60000;
+      const perthOffset = 8 * 60 * 60000;
+      return new Date(utc + perthOffset).toISOString().split('T')[0];
+    }
 
-      function getPerthDate() {
-        const now = new Date();
-        const utc = now.getTime() + now.getTimezoneOffset() * 60000;
-        const perthOffset = 8 * 60 * 60000;
-        return new Date(utc + perthOffset).toISOString().split('T')[0];
+    function milestoneText(combo) {
+      if (combo === 7) return '🔥 You’re becoming consistent!';
+      if (combo === 14) return '⚡ You’re locked in!';
+      if (combo === 30) return '💎 You’ve leveled up!';
+      return '';
+    }
+
+    function loadTasks() {
+      const list = document.getElementById('taskList');
+      list.innerHTML = '';
+      const tasks = JSON.parse(localStorage.getItem(taskKey) || '[]');
+      tasks.forEach(task => {
+        const li = document.createElement('li');
+        li.innerHTML = `<input type="checkbox" class="task"> <span>${task}</span>`;
+        list.appendChild(li);
+      });
+    }
+
+    function addTask() {
+      const task = document.getElementById('newTask').value.trim();
+      if (!task) return;
+      let tasks = JSON.parse(localStorage.getItem(taskKey) || '[]');
+      tasks.push(task);
+      localStorage.setItem(taskKey, JSON.stringify(tasks));
+      document.getElementById('newTask').value = '';
+      loadTasks();
+    }
+
+    function completeDay() {
+      const checkboxes = document.querySelectorAll('.task');
+      const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+      if (!allChecked) return alert('Complete all tasks first!');
+      const today = getPerthDate();
+      const lastDate = localStorage.getItem(lastDateKey);
+      let combo = parseInt(localStorage.getItem(comboKey)) || 0;
+      if (lastDate === today) return alert('Already submitted today.');
+      combo = (!lastDate || (new Date(today) - new Date(lastDate) === 86400000)) ? combo + 1 : 1;
+      localStorage.setItem(lastDateKey, today);
+      localStorage.setItem(comboKey, combo);
+      localStorage.setItem(journalKey + today, document.getElementById('journalEntry').value);
+      addToCalendar(today);
+      document.getElementById('comboDisplay').textContent = 'Combo: x' + combo;
+      document.getElementById('milestoneMessage').textContent = milestoneText(combo);
+    }
+
+    function resetDay() {
+      const today = getPerthDate();
+      localStorage.removeItem(lastDateKey);
+      localStorage.setItem(comboKey, 0);
+      document.getElementById('comboDisplay').textContent = 'Combo: x0';
+      document.getElementById('journalEntry').value = '';
+      document.getElementById('milestoneMessage').textContent = '';
+    }
+
+    function addToCalendar(date) {
+      let log = JSON.parse(localStorage.getItem(logKey) || '[]');
+      if (!log.includes(date)) {
+        log.push(date);
+        localStorage.setItem(logKey, JSON.stringify(log));
       }
+      renderCalendar();
+    }
 
-      function milestoneText(combo) {
-        if (combo === 7) return '🔥 You’re becoming consistent!';
-        if (combo === 14) return '⚡ You’re locked in!';
-        if (combo === 30) return '💎 You’ve leveled up!';
-        return '';
+    function renderCalendar() {
+      const log = JSON.parse(localStorage.getItem(logKey) || '[]');
+      document.getElementById('calendarLog').innerHTML = '📆 Completed Days: ' + log.join(', ');
+    }
+
+    function handlePhotoUpload(event) {
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        localStorage.setItem(photoKey, e.target.result);
+        document.getElementById('photoPreview').src = e.target.result;
+        document.getElementById('photoPreview').style.display = 'block';
+      };
+      reader.readAsDataURL(event.target.files[0]);
+    }
+
+    function loadState() {
+      const today = getPerthDate();
+      const combo = parseInt(localStorage.getItem(comboKey)) || 0;
+      document.getElementById('comboDisplay').textContent = 'Combo: x' + combo;
+      document.getElementById('milestoneMessage').textContent = milestoneText(combo);
+      document.getElementById('journalEntry').value = localStorage.getItem(journalKey + today) || '';
+      const photo = localStorage.getItem(photoKey);
+      if (photo) {
+        document.getElementById('photoPreview').src = photo;
+        document.getElementById('photoPreview').style.display = 'block';
       }
-
-      function loadTasks() {
-        taskList.innerHTML = '';
-        const tasks = JSON.parse(localStorage.getItem(taskKey) || '[]');
-        tasks.forEach((task, index) => {
-          const li = document.createElement('li');
-          li.innerHTML = \`<input type="checkbox" class="task"> <span>\${task}</span>\`;
-          taskList.appendChild(li);
-        });
-      }
-
-      function addTask() {
-        const task = newTaskInput.value.trim();
-        if (!task) return;
-        let tasks = JSON.parse(localStorage.getItem(taskKey) || '[]');
-        tasks.push(task);
-        localStorage.setItem(taskKey, JSON.stringify(tasks));
-        newTaskInput.value = '';
-        loadTasks();
-      }
-
-      function completeDay() {
-        const checkboxes = document.querySelectorAll('.task');
-        const allChecked = Array.from(checkboxes).every(cb => cb.checked);
-        if (!allChecked) return alert('Complete all tasks first!');
-
-        const today = getPerthDate();
-        const lastDate = localStorage.getItem(lastDateKey);
-        let combo = parseInt(localStorage.getItem(comboKey)) || 0;
-
-        if (lastDate === today) return alert('Already submitted today.');
-
-        combo = (!lastDate || (new Date(today) - new Date(lastDate) === 86400000)) ? combo + 1 : 1;
-
-        localStorage.setItem(lastDateKey, today);
-        localStorage.setItem(comboKey, combo);
-        localStorage.setItem(journalKey + today, journalEntry.value);
-        addToCalendar(today);
-
-        comboDisplay.textContent = 'Combo: x' + combo;
-        milestoneMessage.textContent = milestoneText(combo);
-      }
-
-      function resetDay() {
-        const today = getPerthDate();
-        localStorage.removeItem(lastDateKey);
-        localStorage.setItem(comboKey, 0);
-        comboDisplay.textContent = 'Combo: x0';
-        journalEntry.value = '';
-        milestoneMessage.textContent = '';
-      }
-
-      function handlePhotoUpload(event) {
-        const reader = new FileReader();
-        reader.onload = function (e) {
-          localStorage.setItem(photoKey, e.target.result);
-          photoPreview.src = e.target.result;
-          photoPreview.style.display = 'block';
-        };
-        reader.readAsDataURL(event.target.files[0]);
-      }
-
-      function addToCalendar(date) {
-        let log = JSON.parse(localStorage.getItem(logKey) || '[]');
-        if (!log.includes(date)) {
-          log.push(date);
-          localStorage.setItem(logKey, JSON.stringify(log));
-        }
-        renderCalendar();
-      }
-
-      function renderCalendar() {
-        let log = JSON.parse(localStorage.getItem(logKey) || '[]');
-        calendarLog.innerHTML = '📆 Completed Days: ' + log.join(', ');
-      }
-
-      function loadState() {
-        const combo = parseInt(localStorage.getItem(comboKey)) || 0;
-        const today = getPerthDate();
-        comboDisplay.textContent = 'Combo: x' + combo;
-        milestoneMessage.textContent = milestoneText(combo);
-        journalEntry.value = localStorage.getItem(journalKey + today) || '';
-        const photo = localStorage.getItem(photoKey);
-        if (photo) {
-          photoPreview.src = photo;
-          photoPreview.style.display = 'block';
-        }
-        renderCalendar();
-        loadTasks();
-      }
-
-      document.getElementById("submitDayBtn").addEventListener("click", completeDay);
-      document.getElementById("resetDayBtn").addEventListener("click", resetDay);
-      document.getElementById("addTaskBtn").addEventListener("click", addTask);
-      document.getElementById("photoInput").addEventListener("change", handlePhotoUpload);
-      loadState();
-    });
+      loadTasks();
+      renderCalendar();
+    }
   </script>
 </body>
 </html>
