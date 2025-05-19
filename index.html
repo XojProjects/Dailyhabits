@@ -5,10 +5,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Chopped to Mog Transformation</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700&display=swap" rel="stylesheet">
   <style>
     body {
-      font-family: 'Segoe UI', sans-serif;
-      background: radial-gradient(circle at top, #0f0f0f, #1a1a1a);
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(to bottom right, #0d0d0d, #1a1a1a);
       color: #f0f0f0;
       margin: 0;
       padding: 2rem;
@@ -18,11 +19,14 @@
       color: #ff0050;
       margin-bottom: 0.5rem;
     }
-    .combo {
+    .combo, .quote, .calendar, .journal {
       text-align: center;
-      font-size: 1.1rem;
+      margin-top: 1rem;
+      margin-bottom: 1rem;
+    }
+    .combo {
+      font-size: 1.2rem;
       color: #00ffae;
-      margin-bottom: 1.5rem;
     }
     ul {
       list-style: none;
@@ -49,14 +53,42 @@
       border: none;
       border-radius: 6px;
       font-weight: bold;
-      margin-top: 1.5rem;
+      margin: 1rem 0.5rem 0 0;
       cursor: pointer;
+    }
+    canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      pointer-events: none;
+      z-index: 9999;
+    }
+    textarea {
+      width: 100%;
+      padding: 10px;
+      font-family: 'Inter', sans-serif;
+      margin-top: 10px;
+      border-radius: 8px;
+      background: #202020;
+      border: 1px solid #555;
+      color: white;
+      resize: none;
+    }
+    .calendar {
+      font-size: 0.9rem;
+      color: #aaa;
     }
   </style>
 </head>
 <body>
+  <canvas id="confetti"></canvas>
+  <audio id="tickSound" src="https://assets.mixkit.co/sfx/preview/mixkit-game-ball-tap-2073.mp3"></audio>
+
   <h1>🔥 Chopped to Mog Transformation</h1>
   <div class="combo" id="comboDisplay">Combo: x0</div>
+  <div class="quote" id="dailyQuote"></div>
+
+  <div class="calendar" id="calendarLog"></div>
 
   <div class="month-section" id="month0">
     <h2>Month 0–1: Foundation</h2>
@@ -68,6 +100,7 @@
       <li><label><input type="checkbox" class="task"> Vision Board</label></li>
     </ul>
     <button onclick="completeDay()">Submit Day</button>
+    <button onclick="resetDay()">Reset Day</button>
   </div>
 
   <div class="month-section locked" id="month1">
@@ -75,14 +108,34 @@
     <p>Complete 30 consecutive perfect days to unlock.</p>
   </div>
 
+  <div class="journal">
+    <h3>📝 Daily Journal</h3>
+    <textarea id="journalEntry" rows="4" placeholder="Write your thoughts, wins, or struggles here..."></textarea>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
   <script>
     const comboKey = 'mogger_combo';
     const lastDateKey = 'mogger_last_date';
     const unlockKey = 'mogger_month1_unlocked';
+    const journalKey = 'mogger_journal_';
+    const logKey = 'mogger_calendar_log';
 
     const comboDisplay = document.getElementById('comboDisplay');
     const tasks = document.querySelectorAll('.task');
     const month1 = document.getElementById('month1');
+    const tickSound = document.getElementById('tickSound');
+    const journalEntry = document.getElementById('journalEntry');
+    const calendarLog = document.getElementById('calendarLog');
+    const dailyQuote = document.getElementById('dailyQuote');
+
+    const quotes = [
+      "Push through today, transform tomorrow.",
+      "Moggers are made, not born.",
+      "Each checkbox is one step closer to glory.",
+      "Discipline = Power. You got this.",
+      "Earn the unlock. Become unrecognizable."
+    ];
 
     function getPerthDate() {
       const now = new Date();
@@ -94,12 +147,21 @@
     function loadState() {
       const combo = parseInt(localStorage.getItem(comboKey)) || 0;
       const unlocked = localStorage.getItem(unlockKey) === 'true';
+      const today = getPerthDate();
+
       comboDisplay.textContent = 'Combo: x' + combo;
+      journalEntry.value = localStorage.getItem(journalKey + today) || "";
 
       if (unlocked) {
         month1.classList.remove('locked');
         month1.querySelector('h2').textContent = 'Month 2–3: Base Building';
       }
+
+      // Random quote of the day
+      const q = quotes[new Date().getDate() % quotes.length];
+      dailyQuote.textContent = `💬 "${q}"`;
+
+      renderCalendar();
     }
 
     function completeDay() {
@@ -126,7 +188,12 @@
 
       localStorage.setItem(lastDateKey, today);
       localStorage.setItem(comboKey, combo);
+      localStorage.setItem(journalKey + today, journalEntry.value);
+      addToCalendar(today);
+
       comboDisplay.textContent = 'Combo: x' + combo;
+      tickSound.play();
+      confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
 
       if (combo >= 30) {
         localStorage.setItem(unlockKey, 'true');
@@ -135,6 +202,27 @@
       }
 
       tasks.forEach(t => t.checked = false);
+    }
+
+    function resetDay() {
+      const today = getPerthDate();
+      localStorage.removeItem(lastDateKey);
+      journalEntry.value = '';
+      alert('Today's submission has been reset.');
+    }
+
+    function addToCalendar(date) {
+      let log = JSON.parse(localStorage.getItem(logKey) || '[]');
+      if (!log.includes(date)) {
+        log.push(date);
+        localStorage.setItem(logKey, JSON.stringify(log));
+      }
+      renderCalendar();
+    }
+
+    function renderCalendar() {
+      let log = JSON.parse(localStorage.getItem(logKey) || '[]');
+      calendarLog.innerHTML = '📆 Completed Days: ' + log.join(', ');
     }
 
     window.onload = loadState;
