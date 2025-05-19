@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Chopped to Mog - Phase 1</title>
+  <title>Chopped to Mog - Phase 1 Final</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700&display=swap" rel="stylesheet">
   <style>
     body {
@@ -87,12 +87,12 @@
     <h2>📌 Today's Goals</h2>
     <ul id="taskList"></ul>
     <input type="text" id="newTask" placeholder="Add new task...">
-    <button onclick="addTask()">➕ Add Task</button>
+    <button id="addTaskBtn">➕ Add Task</button>
   </div>
 
   <div style="text-align:center;">
-    <button onclick="completeDay()">✅ Submit Day</button>
-    <button onclick="resetDay()">♻️ Reset Day</button>
+    <button id="submitDayBtn">✅ Submit Day</button>
+    <button id="resetDayBtn">♻️ Reset Day</button>
   </div>
 
   <div class="calendar" id="calendarLog"></div>
@@ -104,131 +104,138 @@
 
   <div class="photos">
     <h2>📷 Progress Photo (Month 1)</h2>
-    <input type="file" accept="image/*" onchange="handlePhotoUpload(event)">
+    <input type="file" id="photoInput" accept="image/*">
     <img id="photoPreview" class="preview" style="display:none;">
   </div>
 
   <script>
-    const comboKey = 'mogger_combo';
-    const lastDateKey = 'mogger_last_date';
-    const journalKey = 'mogger_journal_';
-    const photoKey = 'mogger_photo_month1';
-    const taskKey = 'mogger_tasks';
-    const logKey = 'mogger_calendar_log';
+    document.addEventListener("DOMContentLoaded", () => {
+      const comboKey = 'mogger_combo';
+      const lastDateKey = 'mogger_last_date';
+      const journalKey = 'mogger_journal_';
+      const photoKey = 'mogger_photo_month1';
+      const taskKey = 'mogger_tasks';
+      const logKey = 'mogger_calendar_log';
 
-    const comboDisplay = document.getElementById('comboDisplay');
-    const milestoneMessage = document.getElementById('milestoneMessage');
-    const journalEntry = document.getElementById('journalEntry');
-    const taskList = document.getElementById('taskList');
-    const newTaskInput = document.getElementById('newTask');
-    const photoPreview = document.getElementById('photoPreview');
-    const calendarLog = document.getElementById('calendarLog');
+      const comboDisplay = document.getElementById('comboDisplay');
+      const milestoneMessage = document.getElementById('milestoneMessage');
+      const journalEntry = document.getElementById('journalEntry');
+      const taskList = document.getElementById('taskList');
+      const newTaskInput = document.getElementById('newTask');
+      const photoInput = document.getElementById('photoInput');
+      const photoPreview = document.getElementById('photoPreview');
+      const calendarLog = document.getElementById('calendarLog');
 
-    function getPerthDate() {
-      const now = new Date();
-      const utc = now.getTime() + now.getTimezoneOffset() * 60000;
-      const perthOffset = 8 * 60 * 60000;
-      return new Date(utc + perthOffset).toISOString().split('T')[0];
-    }
-
-    function loadTasks() {
-      taskList.innerHTML = '';
-      const tasks = JSON.parse(localStorage.getItem(taskKey) || '[]');
-      tasks.forEach((task, index) => {
-        const li = document.createElement('li');
-        li.innerHTML = \`<input type="checkbox" class="task"> <span>\${task}</span>\`;
-        taskList.appendChild(li);
-      });
-    }
-
-    function addTask() {
-      const task = newTaskInput.value.trim();
-      if (!task) return;
-      let tasks = JSON.parse(localStorage.getItem(taskKey) || '[]');
-      tasks.push(task);
-      localStorage.setItem(taskKey, JSON.stringify(tasks));
-      newTaskInput.value = '';
-      loadTasks();
-    }
-
-    function completeDay() {
-      const checkboxes = document.querySelectorAll('.task');
-      const allChecked = Array.from(checkboxes).every(cb => cb.checked);
-      if (!allChecked) return alert('Complete all tasks first!');
-
-      const today = getPerthDate();
-      const lastDate = localStorage.getItem(lastDateKey);
-      let combo = parseInt(localStorage.getItem(comboKey)) || 0;
-
-      if (lastDate === today) return alert('Already submitted today.');
-
-      combo = (!lastDate || (new Date(today) - new Date(lastDate) === 86400000)) ? combo + 1 : 1;
-
-      localStorage.setItem(lastDateKey, today);
-      localStorage.setItem(comboKey, combo);
-      localStorage.setItem(journalKey + today, journalEntry.value);
-      addToCalendar(today);
-
-      comboDisplay.textContent = 'Combo: x' + combo;
-      milestoneMessage.textContent = milestoneText(combo);
-    }
-
-    function resetDay() {
-      const today = getPerthDate();
-      localStorage.removeItem(lastDateKey);
-      localStorage.setItem(comboKey, 0);
-      comboDisplay.textContent = 'Combo: x0';
-      journalEntry.value = '';
-      milestoneMessage.textContent = '';
-    }
-
-    function milestoneText(combo) {
-      if (combo === 7) return '🔥 You’re becoming consistent!';
-      if (combo === 14) return '⚡ You’re locked in!';
-      if (combo === 30) return '💎 You’ve leveled up!';
-      return '';
-    }
-
-    function handlePhotoUpload(event) {
-      const reader = new FileReader();
-      reader.onload = function (e) {
-        localStorage.setItem(photoKey, e.target.result);
-        photoPreview.src = e.target.result;
-        photoPreview.style.display = 'block';
-      };
-      reader.readAsDataURL(event.target.files[0]);
-    }
-
-    function addToCalendar(date) {
-      let log = JSON.parse(localStorage.getItem(logKey) || '[]');
-      if (!log.includes(date)) {
-        log.push(date);
-        localStorage.setItem(logKey, JSON.stringify(log));
+      function getPerthDate() {
+        const now = new Date();
+        const utc = now.getTime() + now.getTimezoneOffset() * 60000;
+        const perthOffset = 8 * 60 * 60000;
+        return new Date(utc + perthOffset).toISOString().split('T')[0];
       }
-      renderCalendar();
-    }
 
-    function renderCalendar() {
-      let log = JSON.parse(localStorage.getItem(logKey) || '[]');
-      calendarLog.innerHTML = '📆 Completed Days: ' + log.join(', ');
-    }
-
-    function loadState() {
-      const combo = parseInt(localStorage.getItem(comboKey)) || 0;
-      const today = getPerthDate();
-      comboDisplay.textContent = 'Combo: x' + combo;
-      milestoneMessage.textContent = milestoneText(combo);
-      journalEntry.value = localStorage.getItem(journalKey + today) || '';
-      const photo = localStorage.getItem(photoKey);
-      if (photo) {
-        photoPreview.src = photo;
-        photoPreview.style.display = 'block';
+      function milestoneText(combo) {
+        if (combo === 7) return '🔥 You’re becoming consistent!';
+        if (combo === 14) return '⚡ You’re locked in!';
+        if (combo === 30) return '💎 You’ve leveled up!';
+        return '';
       }
-      renderCalendar();
-      loadTasks();
-    }
 
-    window.onload = loadState;
+      function loadTasks() {
+        taskList.innerHTML = '';
+        const tasks = JSON.parse(localStorage.getItem(taskKey) || '[]');
+        tasks.forEach((task, index) => {
+          const li = document.createElement('li');
+          li.innerHTML = \`<input type="checkbox" class="task"> <span>\${task}</span>\`;
+          taskList.appendChild(li);
+        });
+      }
+
+      function addTask() {
+        const task = newTaskInput.value.trim();
+        if (!task) return;
+        let tasks = JSON.parse(localStorage.getItem(taskKey) || '[]');
+        tasks.push(task);
+        localStorage.setItem(taskKey, JSON.stringify(tasks));
+        newTaskInput.value = '';
+        loadTasks();
+      }
+
+      function completeDay() {
+        const checkboxes = document.querySelectorAll('.task');
+        const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+        if (!allChecked) return alert('Complete all tasks first!');
+
+        const today = getPerthDate();
+        const lastDate = localStorage.getItem(lastDateKey);
+        let combo = parseInt(localStorage.getItem(comboKey)) || 0;
+
+        if (lastDate === today) return alert('Already submitted today.');
+
+        combo = (!lastDate || (new Date(today) - new Date(lastDate) === 86400000)) ? combo + 1 : 1;
+
+        localStorage.setItem(lastDateKey, today);
+        localStorage.setItem(comboKey, combo);
+        localStorage.setItem(journalKey + today, journalEntry.value);
+        addToCalendar(today);
+
+        comboDisplay.textContent = 'Combo: x' + combo;
+        milestoneMessage.textContent = milestoneText(combo);
+      }
+
+      function resetDay() {
+        const today = getPerthDate();
+        localStorage.removeItem(lastDateKey);
+        localStorage.setItem(comboKey, 0);
+        comboDisplay.textContent = 'Combo: x0';
+        journalEntry.value = '';
+        milestoneMessage.textContent = '';
+      }
+
+      function handlePhotoUpload(event) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          localStorage.setItem(photoKey, e.target.result);
+          photoPreview.src = e.target.result;
+          photoPreview.style.display = 'block';
+        };
+        reader.readAsDataURL(event.target.files[0]);
+      }
+
+      function addToCalendar(date) {
+        let log = JSON.parse(localStorage.getItem(logKey) || '[]');
+        if (!log.includes(date)) {
+          log.push(date);
+          localStorage.setItem(logKey, JSON.stringify(log));
+        }
+        renderCalendar();
+      }
+
+      function renderCalendar() {
+        let log = JSON.parse(localStorage.getItem(logKey) || '[]');
+        calendarLog.innerHTML = '📆 Completed Days: ' + log.join(', ');
+      }
+
+      function loadState() {
+        const combo = parseInt(localStorage.getItem(comboKey)) || 0;
+        const today = getPerthDate();
+        comboDisplay.textContent = 'Combo: x' + combo;
+        milestoneMessage.textContent = milestoneText(combo);
+        journalEntry.value = localStorage.getItem(journalKey + today) || '';
+        const photo = localStorage.getItem(photoKey);
+        if (photo) {
+          photoPreview.src = photo;
+          photoPreview.style.display = 'block';
+        }
+        renderCalendar();
+        loadTasks();
+      }
+
+      document.getElementById("submitDayBtn").addEventListener("click", completeDay);
+      document.getElementById("resetDayBtn").addEventListener("click", resetDay);
+      document.getElementById("addTaskBtn").addEventListener("click", addTask);
+      document.getElementById("photoInput").addEventListener("change", handlePhotoUpload);
+      loadState();
+    });
   </script>
 </body>
 </html>
