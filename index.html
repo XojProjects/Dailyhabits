@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Chopped to Mog - FINAL STABLE</title>
+  <title>Chopped to Mog - Gamified</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700&display=swap" rel="stylesheet">
   <style>
     body {
@@ -12,84 +12,112 @@
       background: linear-gradient(to bottom right, #0d0d0d, #1a1a1a);
       color: #f0f0f0;
       margin: 0;
-      padding: 2rem;
+      padding: 1.5rem;
     }
     h1, h2 {
       text-align: center;
       color: #ff0050;
+      margin: 0.5rem 0;
     }
-    .combo, .calendar, .journal, .photos, .milestone {
+    .combo, .milestone {
       text-align: center;
-      margin-top: 1rem;
-      margin-bottom: 1rem;
+      margin: 0.5rem 0;
     }
-    .combo { font-size: 1.2rem; color: #00ffae; }
-    ul { list-style: none; padding: 0; margin-bottom: 1rem; }
-    li { margin: 0.5rem 0; }
-    input[type="checkbox"], input[type="text"] {
-      margin-right: 0.6rem;
-      transform: scale(1.2);
+    .combo { font-size: 1.3rem; color: #00ffae; }
+    .combo-bar-container {
+      width: 100%;
+      background: rgba(255,255,255,0.2);
+      border-radius: 10px;
+      overflow: hidden;
+      height: 20px;
+      margin: 0.5rem 0 1rem;
     }
-    button {
-      padding: 10px 16px;
-      background-color: #ff0050;
+    .combo-bar-fill {
+      width: 0;
+      height: 100%;
+      background: #ff9800;
+      transition: width 0.5s ease, background 0.5s ease;
+    }
+    ul { list-style: none; padding: 0; margin: 1rem 0; }
+    li {
+      display: flex;
+      align-items: center;
+      margin: 0.5rem 0;
+      background: rgba(255,255,255,0.05);
+      padding: 0.5rem;
+      border-radius: 6px;
+    }
+    li span { flex: 1; }
+    input[type="checkbox"] { margin-right: 0.6rem; transform: scale(1.2); }
+    button, .task-list input[type="text"] {
+      font-family: 'Inter', sans-serif;
+    }
+    .task-list input[type="text"] {
+      padding: 8px;
+      width: calc(100% - 100px);
+      margin-right: 0.5rem;
+      border: 1px solid #555;
+      border-radius: 6px;
+      background: #202020;
       color: white;
+    }
+    .task-list button, .action-btn {
+      padding: 8px 12px;
+      margin-right: 0.3rem;
+      background-color: #ff0050;
+      color: #fff;
       border: none;
       border-radius: 6px;
-      font-weight: bold;
-      margin: 0.5rem;
       cursor: pointer;
     }
+    .action-btn { font-size: 0.9rem; }
     textarea {
-      width: 100%;
-      padding: 10px;
-      font-family: 'Inter', sans-serif;
-      border-radius: 8px;
-      background: #202020;
-      border: 1px solid #555;
-      color: white;
-      resize: none;
+      width: 100%; padding: 10px; margin: 1rem 0;
+      border-radius: 8px; background: #202020; border: 1px solid #555;
+      color: #fff; resize: vertical;
     }
-    input[type="file"] { margin-top: 0.5rem; }
-    img.preview {
-      max-width: 100%;
-      margin-top: 1rem;
-      border: 2px solid #333;
-      border-radius: 8px;
+    .calendar {
+      text-align: center; font-size: 0.9rem; color: #aaa; margin: 0.5rem 0;
     }
+    input[type="file"] { margin: 0.5rem 0; }
+    img.preview { max-width: 100%; margin: 0.5rem 0; border: 2px solid #333; border-radius: 6px; }
   </style>
 </head>
 <body onload="loadState()">
+
   <h1>🔥 Chopped to Mog Tracker</h1>
+
   <div class="combo" id="comboDisplay">Combo: x0</div>
+  <div class="combo-bar-container"><div id="comboBar" class="combo-bar-fill"></div></div>
   <div class="milestone" id="milestoneMessage"></div>
 
-  <div>
+  <div class="task-list">
     <h2>📌 Today's Goals</h2>
     <ul id="taskList"></ul>
-    <input type="text" id="newTask" placeholder="Add new task...">
-    <button onclick="addTask()">➕ Add Task</button>
+    <input type="text" id="newTask" placeholder="Add new goal...">
+    <button id="addTaskBtn">➕ Add</button>
   </div>
 
-  <div style="text-align:center;">
-    <button onclick="completeDay()">✅ Submit Day</button>
-    <button onclick="resetDay()">♻️ Reset Day</button>
+  <div style="text-align:center; margin:1rem 0;">
+    <button id="submitDayBtn">✅ Submit Day</button>
+    <button id="resetDayBtn">♻️ Reset Day</button>
   </div>
 
   <div class="calendar" id="calendarLog"></div>
 
   <div class="journal">
     <h2>📝 Daily Journal</h2>
-    <textarea id="journalEntry" rows="4" placeholder="Write your thoughts, wins, or struggles..."></textarea>
+    <textarea id="journalEntry" rows="4" placeholder="Write your thoughts..."></textarea>
   </div>
 
   <div class="photos">
     <h2>📷 Progress Photo (Month 1)</h2>
-    <input type="file" accept="image/*" onchange="handlePhotoUpload(event)">
+    <input type="file" id="photoInput" accept="image/*">
     <img id="photoPreview" class="preview" style="display:none;">
   </div>
 
   <script>
+    // Keys
     const comboKey = 'mogger_combo';
     const lastDateKey = 'mogger_last_date';
     const journalKey = 'mogger_journal_';
@@ -97,104 +125,167 @@
     const taskKey = 'mogger_tasks';
     const logKey = 'mogger_calendar_log';
 
+    // Elements
+    const comboDisplay = document.getElementById('comboDisplay');
+    const comboBar = document.getElementById('comboBar');
+    const milestoneMessage = document.getElementById('milestoneMessage');
+    const taskList = document.getElementById('taskList');
+    const addTaskBtn = document.getElementById('addTaskBtn');
+    const newTaskInput = document.getElementById('newTask');
+    const submitDayBtn = document.getElementById('submitDayBtn');
+    const resetDayBtn = document.getElementById('resetDayBtn');
+    const journalEntry = document.getElementById('journalEntry');
+    const photoInput = document.getElementById('photoInput');
+    const photoPreview = document.getElementById('photoPreview');
+    const calendarLog = document.getElementById('calendarLog');
+
+    // Helper: get Perth date string
     function getPerthDate() {
       const now = new Date();
-      const utc = now.getTime() + now.getTimezoneOffset() * 60000;
-      const perthOffset = 8 * 60 * 60000;
-      return new Date(utc + perthOffset).toISOString().split('T')[0];
+      const utc = now.getTime() + now.getTimezoneOffset()*60000;
+      const perth = new Date(utc + 8*60*60000);
+      return perth.toISOString().split('T')[0];
     }
 
-    function milestoneText(combo) {
-      if (combo === 7) return '🔥 You’re becoming consistent!';
-      if (combo === 14) return '⚡ You’re locked in!';
-      if (combo === 30) return '💎 You’ve leveled up!';
+    // Milestone text
+    function milestoneText(c) {
+      if (c>=30) return '💎 Full Mog Achieved!';
+      if (c>=14) return '⚡ Locked In!';
+      if (c>=7) return '🔥 Consistency!';
       return '';
     }
 
+    // Load tasks
     function loadTasks() {
-      const list = document.getElementById('taskList');
-      list.innerHTML = '';
-      const tasks = JSON.parse(localStorage.getItem(taskKey) || '[]');
-      tasks.forEach(task => {
+      taskList.innerHTML='';
+      const tasks = JSON.parse(localStorage.getItem(taskKey)||'[]');
+      tasks.forEach((task,i)=>{
         const li = document.createElement('li');
-        li.innerHTML = `<input type="checkbox" class="task"> <span>${task}</span>`;
-        list.appendChild(li);
+        li.innerHTML = `
+          <input type="checkbox" class="task">
+          <span>${task}</span>
+          <button class="action-btn" data-index="${i}" onclick="editTask(${i})">✏️</button>
+          <button class="action-btn" data-index="${i}" onclick="deleteTask(${i})">🗑️</button>
+        `;
+        taskList.appendChild(li);
       });
     }
 
+    // Add task
     function addTask() {
-      const task = document.getElementById('newTask').value.trim();
-      if (!task) return;
-      let tasks = JSON.parse(localStorage.getItem(taskKey) || '[]');
-      tasks.push(task);
-      localStorage.setItem(taskKey, JSON.stringify(tasks));
-      document.getElementById('newTask').value = '';
+      const t=newTaskInput.value.trim(); if(!t) return;
+      const tasks=JSON.parse(localStorage.getItem(taskKey)||'[]');
+      tasks.push(t); localStorage.setItem(taskKey,JSON.stringify(tasks));
+      newTaskInput.value=''; loadTasks();
+    }
+
+    // Edit task
+    function editTask(i){
+      const tasks=JSON.parse(localStorage.getItem(taskKey)||'[]');
+      const newText = prompt("Edit goal:", tasks[i]);
+      if(newText!==null){
+        tasks[i]=newText.trim()||tasks[i];
+        localStorage.setItem(taskKey,JSON.stringify(tasks));
+        loadTasks();
+      }
+    }
+
+    // Delete task
+    function deleteTask(i){
+      const tasks=JSON.parse(localStorage.getItem(taskKey)||'[]');
+      tasks.splice(i,1);
+      localStorage.setItem(taskKey,JSON.stringify(tasks));
       loadTasks();
     }
 
-    function completeDay() {
-      const checkboxes = document.querySelectorAll('.task');
-      const allChecked = Array.from(checkboxes).every(cb => cb.checked);
-      if (!allChecked) return alert('Complete all tasks first!');
-      const today = getPerthDate();
-      const lastDate = localStorage.getItem(lastDateKey);
-      let combo = parseInt(localStorage.getItem(comboKey)) || 0;
-      if (lastDate === today) return alert('Already submitted today.');
-      combo = (!lastDate || (new Date(today) - new Date(lastDate) === 86400000)) ? combo + 1 : 1;
-      localStorage.setItem(lastDateKey, today);
-      localStorage.setItem(comboKey, combo);
-      localStorage.setItem(journalKey + today, document.getElementById('journalEntry').value);
+    // Update combo bar
+    function updateComboBar(c){
+      const perc = Math.min(100, (c/30)*100);
+      comboBar.style.width = perc+'%';
+      let color='#ff9800';
+      if(c>=30) color='#00e676';
+      else if(c>=14) color='#9c27b0';
+      else if(c>=7) color='#2196f3';
+      comboBar.style.background = color;
+    }
+
+    // Submit day logic
+    function completeDay(){
+      const checks=document.querySelectorAll('.task');
+      const all=Array.from(checks).every(cb=>cb.checked);
+      if(!all) return alert('Complete all tasks!');
+      const today=getPerthDate();
+      if(localStorage.getItem(lastDateKey)===today) return alert('Already submitted!');
+      const last=localStorage.getItem(lastDateKey);
+      let combo=parseInt(localStorage.getItem(comboKey))||0;
+      combo = (!last || (new Date(today)-new Date(last)===86400000))?combo+1:1;
+      localStorage.setItem(lastDateKey,today);
+      localStorage.setItem(comboKey,combo);
+      localStorage.setItem(journalKey+today,journalEntry.value);
       addToCalendar(today);
-      document.getElementById('comboDisplay').textContent = 'Combo: x' + combo;
-      document.getElementById('milestoneMessage').textContent = milestoneText(combo);
+      comboDisplay.textContent='Combo: x'+combo;
+      updateComboBar(combo);
+      milestoneMessage.textContent=milestoneText(combo);
+      // reset checks
+      checks.forEach(cb=>cb.checked=false);
     }
 
-    function resetDay() {
-      const today = getPerthDate();
+    // Reset day logic
+    function resetDay(){
+      const today=getPerthDate();
       localStorage.removeItem(lastDateKey);
-      localStorage.setItem(comboKey, 0);
-      document.getElementById('comboDisplay').textContent = 'Combo: x0';
-      document.getElementById('journalEntry').value = '';
-      document.getElementById('milestoneMessage').textContent = '';
+      localStorage.setItem(comboKey,0);
+      comboDisplay.textContent='Combo: x0';
+      updateComboBar(0);
+      milestoneMessage.textContent='';
+      journalEntry.value='';
     }
 
-    function addToCalendar(date) {
-      let log = JSON.parse(localStorage.getItem(logKey) || '[]');
-      if (!log.includes(date)) {
-        log.push(date);
-        localStorage.setItem(logKey, JSON.stringify(log));
-      }
+    // Photo upload
+    function handlePhotoUpload(e){
+      const reader=new FileReader();
+      reader.onload=e=>{localStorage.setItem(photoKey,e.target.result);
+        photoPreview.src=e.target.result;
+        photoPreview.style.display='block';
+      };
+      reader.readAsDataURL(e.target.files[0]);
+    }
+
+    // Calendar log
+    function addToCalendar(date){
+      const log=JSON.parse(localStorage.getItem(logKey)||'[]');
+      if(!log.includes(date)){log.push(date); localStorage.setItem(logKey,JSON.stringify(log));}
       renderCalendar();
     }
-
-    function renderCalendar() {
-      const log = JSON.parse(localStorage.getItem(logKey) || '[]');
-      document.getElementById('calendarLog').innerHTML = '📆 Completed Days: ' + log.join(', ');
+    function renderCalendar(){
+      const log=JSON.parse(localStorage.getItem(logKey)||'[]');
+      calendarLog.textContent='📆 Completed Days: '+log.join(', ');
     }
 
-    function handlePhotoUpload(event) {
-      const reader = new FileReader();
-      reader.onload = function (e) {
-        localStorage.setItem(photoKey, e.target.result);
-        document.getElementById('photoPreview').src = e.target.result;
-        document.getElementById('photoPreview').style.display = 'block';
-      };
-      reader.readAsDataURL(event.target.files[0]);
-    }
-
-    function loadState() {
-      const today = getPerthDate();
-      const combo = parseInt(localStorage.getItem(comboKey)) || 0;
-      document.getElementById('comboDisplay').textContent = 'Combo: x' + combo;
-      document.getElementById('milestoneMessage').textContent = milestoneText(combo);
-      document.getElementById('journalEntry').value = localStorage.getItem(journalKey + today) || '';
-      const photo = localStorage.getItem(photoKey);
-      if (photo) {
-        document.getElementById('photoPreview').src = photo;
-        document.getElementById('photoPreview').style.display = 'block';
+    // Load state
+    function loadState(){
+      const tasks=JSON.parse(localStorage.getItem(taskKey)||'[]');
+      if(!tasks.length){
+        // default tasks
+        localStorage.setItem(taskKey,JSON.stringify([
+          'AM Skincare','PM Skincare','Weekly Clay Mask','Meditate 5 min','Vision Board'
+        ]));
       }
       loadTasks();
+      const today=getPerthDate();
+      const combo=parseInt(localStorage.getItem(comboKey))||0;
+      comboDisplay.textContent='Combo: x'+combo;
+      updateComboBar(combo);
+      milestoneMessage.textContent=milestoneText(combo);
+      journalEntry.value=localStorage.getItem(journalKey+today)||'';
+      const photo=localStorage.getItem(photoKey);
+      if(photo){photoPreview.src=photo;photoPreview.style.display='block';}
       renderCalendar();
+      // bind events
+      addTaskBtn.onclick=addTask;
+      submitDayBtn.onclick=completeDay;
+      resetDayBtn.onclick=resetDay;
+      photoInput.onchange=handlePhotoUpload;
     }
   </script>
 </body>
